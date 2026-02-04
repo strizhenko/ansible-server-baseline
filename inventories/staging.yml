@@ -1,0 +1,18 @@
+---
+# Staging environment inventory
+all:
+  hosts:
+    staging-01:
+      ansible_host: 192.168.2.10
+      ansible_user: admin
+      server_role: staging
+      docker_enabled: true
+  
+  vars:
+    env: staging
+    domain: staging.example.com
+    ssh_port: 22
+    timezone: Europe/Warsaw
+    prometheus_enabled: true
+    firewall_default_policy: "allow"
+    enable_automatic_updates: false

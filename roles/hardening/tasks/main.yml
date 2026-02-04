@@ -1,0 +1,119 @@
+---
+# Server hardening tasks
+
+- name: Configure SSH daemon
+  template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart ssh
+
+- name: Ensure SSH directory permissions
+  file:
+    path: /etc/ssh
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Configure system limits
+  template:
+    src: limits.conf.j2
+    dest: /etc/security/limits.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configure sysctl parameters
+  template:
+    src: sysctl.conf.j2
+    dest: /etc/sysctl.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: apply sysctl
+
+- name: Configure audit rules
+  template:
+    src: audit.rules.j2
+    dest: /etc/audit/rules.d/50-ansible.rules
+    owner: root
+    group: root
+    mode: '0640'
+  when: security_audit_enabled
+  notify: restart auditd
+
+- name: Install and configure firewall (UFW)
+  apt:
+    name: ufw
+    state: present
+  when: ansible_os_family == "Debian" and security_firewall_enabled
+
+- name: Configure UFW default policies
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: "{{ firewall_default_policy | default('deny') }}" }
+    - { direction: outgoing, policy: allow }
+    - { direction: routed, policy: deny }
+  when: ansible_os_family == "Debian" and security_firewall_enabled
+
+- name: Allow specific ports through UFW
+  ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto | default('tcp') }}"
+  loop: "{{ firewall_allowed_ports | default([]) }}"
+  when: ansible_os_family == "Debian" and security_firewall_enabled
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+    log: yes
+  when: ansible_os_family == "Debian" and security_firewall_enabled
+
+- name: Configure firewalld (RHEL/CentOS)
+  firewalld:
+    port: "{{ item.port }}/{{ item.proto | default('tcp') }}"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop: "{{ firewall_allowed_ports | default([]) }}"
+  when: ansible_os_family == "RedHat" and security_firewall_enabled
+
+- name: Remove unnecessary packages
+  package:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - telnetd
+    - rsh-server
+    - ypserv
+    - tftp
+    - xinetd
+  ignore_errors: yes
+
+- name: Disable unused services
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - avahi-daemon
+    - cups
+    - dhcpd
+    - slapd
+    - nfs
+    - rpcbind
+    - vsftpd
+  ignore_errors: yes
+
+- name: Set password policy
+  lineinfile:
+    path: /etc/pam.d/common-password
+    regexp: '^password.*pam_unix.so'
+    line: 'password        [success=1 default=ignore]      pam_unix.so obscure sha512 minlen=12 remember=5'
+  when: ansible_os_family == "Debian"

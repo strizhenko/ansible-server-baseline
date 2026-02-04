@@ -1,0 +1,18 @@
+---
+# Development environment inventory
+all:
+  hosts:
+    dev-01:
+      ansible_host: 192.168.3.10
+      ansible_user: vagrant
+      server_role: development
+      docker_enabled: true
+  
+  vars:
+    env: development
+    domain: dev.example.com
+    ssh_port: 22
+    timezone: Europe/Warsaw
+    prometheus_enabled: false
+    firewall_default_policy: "allow"
+    enable_automatic_updates: false

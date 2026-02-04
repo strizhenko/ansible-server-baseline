@@ -1,0 +1,52 @@
+---
+# Production environment inventory
+all:
+  children:
+    webservers:
+      hosts:
+        web-prod-01:
+          ansible_host: 192.168.1.10
+          ansible_user: deploy
+          server_role: web
+          docker_enabled: true
+        web-prod-02:
+          ansible_host: 192.168.1.11
+          ansible_user: deploy
+          server_role: web
+          docker_enabled: true
+    
+    databases:
+      hosts:
+        db-prod-01:
+          ansible_host: 192.168.1.20
+          ansible_user: deploy
+          server_role: database
+          docker_enabled: false
+    
+    monitoring:
+      hosts:
+        monitor-prod-01:
+          ansible_host: 192.168.1.30
+          ansible_user: deploy
+          server_role: monitoring
+          docker_enabled: true
+    
+  vars:
+    # Global variables for production
+    env: production
+    domain: example.com
+    ssh_port: 2222
+    timezone: Europe/Warsaw
+    
+    # Monitoring
+    prometheus_enabled: true
+    node_exporter_port: 9100
+    
+    # Docker
+    docker_version: "24.0"
+    docker_compose_version: "v2.20.0"
+    
+    # Security
+    firewall_default_policy: "deny"
+    enable_automatic_updates: true
+    security_updates_only: true

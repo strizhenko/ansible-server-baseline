@@ -1,0 +1,29 @@
+---
+# Variables specific to web servers
+webserver_type: nginx
+webserver_version: latest
+
+firewall_allowed_ports:
+  - { port: "{{ ssh_port }}", proto: tcp, comment: "SSH" }
+  - { port: 80, proto: tcp, comment: "HTTP" }
+  - { port: 443, proto: tcp, comment: "HTTPS" }
+  - { port: "{{ node_exporter_port | default(9100) }}", proto: tcp, comment: "Node Exporter", source: "monitoring_net" }
+
+monitoring_extra_metrics:
+  - name: nginx_status
+    script: |
+      #!/bin/bash
+      curl -s http://localhost/nginx_status | grep -E "Active connections|server accepts handled requests"
+  - name: php_fpm_status
+    script: |
+      #!/bin/bash
+      curl -s http://localhost/status | grep -E "pool:|process manager:|start time:"
+
+system_packages:
+  - nginx
+  - curl
+  - git
+  - htop
+  - iotop
+  - iftop
+  - net-tools

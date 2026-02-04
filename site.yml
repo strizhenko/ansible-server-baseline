@@ -1,0 +1,80 @@
+---
+- name: Configure baseline server settings
+  hosts: all
+  gather_facts: true
+  become: true
+  serial: "30%"
+  
+  pre_tasks:
+    - name: Check Ansible version
+      assert:
+        that: ansible_version.full is version('2.9', '>=')
+        msg: "Ansible 2.9+ is required"
+    
+    - name: Update apt cache (Debian)
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+    
+    - name: Update yum cache (RHEL)
+      yum:
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+  roles:
+    - { role: common, tags: ['common', 'base'] }
+    - { role: hardening, tags: ['hardening', 'security'] }
+    - { role: monitoring, tags: ['monitoring', 'observability'] }
+    - { role: docker, tags: ['docker', 'container'], when: docker_enabled | default(false) }
+    - { role: updates, tags: ['updates', 'maintenance'] }
+
+  post_tasks:
+    - name: Display completion message
+      debug:
+        msg: "Baseline configuration completed for {{ inventory_hostname }}"
+    
+    - name: Create summary report
+      template:
+        src: |
+          Host: {{ inventory_hostname }}
+          IP: {{ ansible_default_ipv4.address }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Roles applied: common, hardening, monitoring{% if docker_enabled | default(false) %}, docker{% endif %}, updates
+          Applied at: {{ ansible_date_time.iso8601 }}
+        dest: "/tmp/ansible-baseline-{{ inventory_hostname }}.txt"
+      delegate_to: localhost
+      run_once: true
+
+  handlers:
+    - name: restart ssh
+      service:
+        name: sshd
+        state: restarted
+    
+    - name: apply sysctl
+      command: sysctl -p
+      listen: "apply sysctl"
+    
+    - name: restart auditd
+      service:
+        name: auditd
+        state: restarted
+      listen: "restart auditd"
+    
+    - name: daemon-reload
+      systemd:
+        daemon_reload: true
+      listen: "daemon-reload"
+    
+    - name: restart node_exporter
+      service:
+        name: node_exporter
+        state: restarted
+      listen: "restart node_exporter"
+    
+    - name: restart docker
+      service:
+        name: docker
+        state: restarted
+      listen: "restart docker"

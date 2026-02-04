@@ -1,0 +1,78 @@
+---
+# Common system configuration tasks
+
+- name: Ensure system is up to date
+  apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Ensure system is up to date (RHEL)
+  yum:
+    name: '*'
+    state: latest
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Install essential packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - curl
+    - wget
+    - git
+    - vim
+    - htop
+    - net-tools
+    - software-properties-common
+    - apt-transport-https
+    - ca-certificates
+    - gnupg-agent
+  when: ansible_os_family == "Debian"
+
+- name: Set hostname
+  hostname:
+    name: "{{ system_hostname }}"
+
+- name: Configure timezone
+  timezone:
+    name: "{{ system_timezone }}"
+
+- name: Configure locale
+  locale_gen:
+    name: "{{ system_locale }}"
+    state: present
+
+- name: Configure DNS resolvers
+  lineinfile:
+    path: /etc/resolv.conf
+    line: "nameserver {{ item }}"
+    create: yes
+  loop: "{{ dns_servers }}"
+
+- name: Create deploy user
+  user:
+    name: "{{ item.name }}"
+    groups: "{{ item.groups | default(omit) }}"
+    shell: "{{ item.shell | default('/bin/bash') }}"
+    password: "{{ item.password | default(omit) }}"
+    state: "{{ item.state | default('present') }}"
+    create_home: true
+    system: false
+  loop: "{{ users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Add SSH keys for users
+  authorized_key:
+    user: "{{ item.0.name }}"
+    key: "{{ item.1 }}"
+    state: present
+    exclusive: false
+  with_subelements:
+    - "{{ users }}"
+    - ssh_keys
+    - skip_missing: true
+  when: item.1 is defined

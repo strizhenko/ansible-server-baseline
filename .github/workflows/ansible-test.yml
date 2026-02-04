@@ -1,0 +1,90 @@
+name: Ansible Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint Ansible Playbooks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          pip install ansible ansible-lint yamllint
+          ansible --version
+          ansible-lint --version
+      
+      - name: Run yamllint
+        run: yamllint -c .yamllint .
+      
+      - name: Run ansible-lint
+        run: ansible-lint site.yml playbooks/*.yml
+  
+  syntax-check:
+    name: Syntax Check
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install Ansible
+        run: pip install ansible
+      
+      - name: Check playbook syntax
+        run: |
+          ansible-playbook site.yml --syntax-check
+          ansible-playbook playbooks/deploy.yml --syntax-check
+          ansible-playbook playbooks/validate.yml --syntax-check
+  
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: [lint, syntax-check]
+    
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04, centos-7]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run molecule test
+        uses: gofrolist/molecule-action@v2
+        with:
+          molecule_command: test
+          image: geerlingguy/docker-${{ matrix.os }}-ansible:latest
+      
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [lint, syntax-check, integration-test]
+    if: always()
+    
+    steps:
+      - name: Send notification
+        run: |
+          echo "Ansible tests completed"
+          echo "Lint: ${{ needs.lint.result }}"
+          echo "Syntax Check: ${{ needs.syntax-check.result }}"
+          echo "Integration Test: ${{ needs.integration-test.result }}"

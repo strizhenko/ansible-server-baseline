@@ -1,0 +1,55 @@
+---
+- name: Deploy application to servers
+  hosts: "{{ target | default('webservers') }}"
+  become: true
+  vars:
+    app_version: "1.0.0"
+    app_port: 8080
+  
+  tasks:
+    - name: Ensure application directory exists
+      file:
+        path: /opt/myapp
+        state: directory
+        owner: deploy
+        group: deploy
+        mode: '0755'
+    
+    - name: Deploy application files
+      copy:
+        src: "{{ app_files_path }}"
+        dest: /opt/myapp
+        owner: deploy
+        group: deploy
+        mode: '0644'
+    
+    - name: Create Docker Compose file
+      template:
+        src: docker-compose.yml.j2
+        dest: /opt/myapp/docker-compose.yml
+        owner: deploy
+        group: deploy
+        mode: '0644'
+    
+    - name: Start application with Docker Compose
+      command:
+        cmd: docker-compose up -d
+        chdir: /opt/myapp
+      environment:
+        APP_VERSION: "{{ app_version }}"
+        APP_PORT: "{{ app_port }}"
+    
+    - name: Wait for application to start
+      wait_for:
+        port: "{{ app_port }}"
+        delay: 5
+        timeout: 60
+    
+    - name: Verify application is running
+      uri:
+        url: "http://localhost:{{ app_port }}/health"
+        return_content: yes
+      register: health_check
+      
+    - debug:
+        msg: "Application deployed successfully. Health check: {{ health_check.status }}"

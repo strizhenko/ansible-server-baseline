@@ -1,17 +1,59 @@
+# Secrets
+*.tfvars
+*.pem
+*.key
+*.secret
+.env
+.vault_pass
+id_rsa
+id_rsa.pub
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfstate.d/
+
 # Ansible
 retry-*
 *.retry
-*.secret
-.vault_pass
+*.vault
+ansible.log
+ansible-*.tmp
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Molecule
+.molecule/
+.cache/
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/

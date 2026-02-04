@@ -1,0 +1,87 @@
+---
+# Global variables for all hosts
+ansible_user: "{{ deploy_user | default('admin') }}"
+ansible_become: yes
+ansible_become_method: sudo
+ansible_become_user: root
+ansible_python_interpreter: /usr/bin/python3
+
+# System settings
+system_hostname: "{{ inventory_hostname }}"
+system_timezone: "{{ timezone | default('UTC') }}"
+system_locale: en_US.UTF-8
+
+# User management
+users:
+  - name: deploy
+    groups: sudo,docker
+    shell: /bin/bash
+    ssh_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC..."
+    sudo_nopasswd: true
+    state: present
+
+  - name: monitor
+    groups: docker
+    shell: /bin/bash
+    ssh_keys: []
+    sudo_nopasswd: false
+    state: present
+
+# Package management
+package_manager: "{{ 'apt' if ansible_os_family == 'Debian' else 'yum' }}"
+
+# Repository configuration
+apt_repositories:
+  - deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} main restricted
+  - deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }}-updates main restricted
+  - deb http://security.ubuntu.com/ubuntu {{ ansible_distribution_release }}-security main restricted
+
+# Network settings
+dns_servers:
+  - 8.8.8.8
+  - 8.8.4.4
+  - 1.1.1.1
+
+# SSH settings
+ssh_port: "{{ ssh_port | default(22) }}"
+ssh_listen_address: 0.0.0.0
+ssh_permit_root_login: "no"
+ssh_password_authentication: "no"
+ssh_public_key_authentication: "yes"
+ssh_client_alive_interval: 300
+ssh_client_alive_count_max: 2
+ssh_max_auth_tries: 3
+ssh_login_grace_time: 30
+
+# Security settings
+security_audit_enabled: true
+security_firewall_enabled: true
+security_selinux_enabled: false
+security_apparmor_enabled: true
+
+# Monitoring settings
+monitoring_enabled: "{{ prometheus_enabled | default(true) }}"
+node_exporter_version: "1.6.0"
+node_exporter_port: "{{ node_exporter_port | default(9100) }}"
+node_exporter_collectors:
+  - cpu
+  - memory
+  - diskstats
+  - filesystem
+  - netstat
+  - systemd
+  - loadavg
+  - stat
+
+# Docker settings
+docker_enabled: "{{ docker_enabled | default(false) }}"
+docker_version: "{{ docker_version | default('24.0') }}"
+docker_compose_version: "{{ docker_compose_version | default('v2.20.0') }}"
+docker_users: ['deploy']
+
+# Update settings
+automatic_updates_enabled: "{{ enable_automatic_updates | default(true) }}"
+automatic_updates_reboot: false
+automatic_updates_reboot_time: "03:00"
+unattended_upgrades_email: "admin@{{ domain | default('example.com') }}"

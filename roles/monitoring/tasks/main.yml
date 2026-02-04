@@ -1,0 +1,100 @@
+---
+# Monitoring setup tasks
+
+- name: Create monitoring user
+  user:
+    name: node_exporter
+    system: true
+    shell: /bin/false
+    home: /var/lib/node_exporter
+    state: present
+  when: monitoring_enabled
+
+- name: Create Node Exporter directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: node_exporter
+    group: node_exporter
+    mode: '0755'
+  loop:
+    - /var/lib/node_exporter
+    - /var/lib/node_exporter/textfile_collector
+  when: monitoring_enabled
+
+- name: Download Node Exporter
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    dest: /tmp/node_exporter.tar.gz
+    checksum: "sha256:{{ node_exporter_checksum | default(omit) }}"
+  when: monitoring_enabled
+
+- name: Extract Node Exporter
+  unarchive:
+    src: /tmp/node_exporter.tar.gz
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+  when: monitoring_enabled
+
+- name: Install Node Exporter binary
+  copy:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: true
+  when: monitoring_enabled
+
+- name: Configure Node Exporter systemd service
+  template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: monitoring_enabled
+  notify:
+    - daemon-reload
+    - restart node_exporter
+
+- name: Enable and start Node Exporter
+  systemd:
+    name: node_exporter
+    state: started
+    enabled: true
+    daemon_reload: true
+  when: monitoring_enabled
+
+- name: Create custom metric scripts
+  copy:
+    content: "{{ item.script }}"
+    dest: "/usr/local/bin/{{ item.name }}.sh"
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ monitoring_extra_metrics | default([]) }}"
+  when: monitoring_enabled and monitoring_extra_metrics is defined
+
+- name: Create cron job for custom metrics
+  cron:
+    name: "Collect {{ item.name }} metrics"
+    minute: "*"
+    job: "/usr/local/bin/{{ item.name }}.sh > /var/lib/node_exporter/textfile_collector/{{ item.name }}.prom"
+    user: node_exporter
+  loop: "{{ monitoring_extra_metrics | default([]) }}"
+  when: monitoring_enabled and monitoring_extra_metrics is defined
+
+- name: Install monitoring tools
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - htop
+    - iotop
+    - iftop
+    - nmon
+    - dstat
+    - sysstat
+  when: monitoring_enabled

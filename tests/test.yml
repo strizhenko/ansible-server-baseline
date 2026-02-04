@@ -1,0 +1,34 @@
+---
+- name: Test server configuration
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  tasks:
+    - name: Check playbook syntax
+      command: ansible-playbook site.yml --syntax-check
+      changed_when: false
+    
+    - name: Check YAML files
+      command: yamllint -c .yamllint .
+      changed_when: false
+    
+    - name: Check inventory files
+      command: ansible-inventory -i inventories/production.yml --list
+      changed_when: false
+    
+    - name: Validate role structure
+      stat:
+        path: "{{ item }}"
+      loop:
+        - roles/common/tasks/main.yml
+        - roles/hardening/tasks/main.yml
+        - roles/monitoring/tasks/main.yml
+        - roles/docker/tasks/main.yml
+      register: role_files
+      
+    - name: Report missing files
+      debug:
+        msg: "Missing file: {{ item.item }}"
+      loop: "{{ role_files.results }}"
+      when: not item.stat.exists
