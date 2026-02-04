@@ -1,0 +1,23 @@
+# Ansible managed - do not modify manually
+[commands]
+update_cmd = security
+update_messages = yes
+download_updates = yes
+apply_updates = yes
+random_sleep = 360
+
+[emitters]
+system_name = None
+emit_via = stdio
+output_width = 80
+
+[email]
+email_from = root@{{ inventory_hostname }}
+email_to = {{ unattended_upgrades_email | default('root') }}
+email_host = localhost
+
+[groups]
+group_list = None
+
+[base]
+debuglevel = -1

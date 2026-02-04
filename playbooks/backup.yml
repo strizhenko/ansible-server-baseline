@@ -1,0 +1,80 @@
+---
+- name: Backup server configuration
+  hosts: all
+  become: true
+  vars:
+    backup_dir: /var/backups/ansible
+    backup_retention_days: 30
+  
+  tasks:
+    - name: Create backup directory
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+    
+    - name: Backup SSH configuration
+      copy:
+        src: /etc/ssh/sshd_config
+        dest: "{{ backup_dir }}/sshd_config-{{ ansible_date_time.date }}"
+        remote_src: true
+        mode: '0600'
+    
+    - name: Backup firewall rules
+      command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+      when: ansible_os_family == "Debian"
+    
+    - name: Save firewall rules to file
+      copy:
+        content: "{{ ufw_status.stdout }}"
+        dest: "{{ backup_dir }}/ufw-rules-{{ ansible_date_time.date }}.txt"
+        mode: '0600'
+      when: ansible_os_family == "Debian"
+    
+    - name: Backup important configuration files
+      archive:
+        path:
+          - /etc/ssh
+          - /etc/ufw
+          - /etc/audit
+          - /etc/docker
+        dest: "{{ backup_dir }}/config-backup-{{ ansible_date_time.date }}.tar.gz"
+        format: gz
+        owner: root
+        group: root
+        mode: '0600'
+    
+    - name: Create backup manifest
+      copy:
+        content: |
+          Backup created: {{ ansible_date_time.iso8601 }}
+          Host: {{ inventory_hostname }}
+          Files backed up:
+            - SSH configuration
+            - Firewall rules
+            - Audit configuration
+            - Docker configuration
+        dest: "{{ backup_dir }}/manifest-{{ ansible_date_time.date }}.txt"
+        mode: '0644'
+    
+    - name: Clean old backups
+      find:
+        paths: "{{ backup_dir }}"
+        patterns: "*.tar.gz,*.txt"
+        age: "{{ backup_retention_days }}d"
+        state: absent
+      changed_when: false
+    
+    - name: Display backup summary
+      debug:
+        msg: |
+          Backup completed for {{ inventory_hostname }}
+          Location: {{ backup_dir }}
+          Files created:
+            - sshd_config-{{ ansible_date_time.date }}
+            - config-backup-{{ ansible_date_time.date }}.tar.gz
+            - manifest-{{ ansible_date_time.date }}.txt

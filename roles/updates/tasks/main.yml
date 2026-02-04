@@ -1,0 +1,62 @@
+---
+- name: Configure automatic updates (Debian/Ubuntu)
+  apt:
+    name: unattended-upgrades
+    state: present
+  when: ansible_os_family == "Debian" and automatic_updates_enabled | default(true)
+
+- name: Configure unattended-upgrades (Debian/Ubuntu)
+  template:
+    src: 50unattended-upgrades.j2
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    owner: root
+    group: root
+    mode: '0644'
+  when: ansible_os_family == "Debian" and automatic_updates_enabled | default(true)
+
+- name: Enable automatic updates (Debian/Ubuntu)
+  copy:
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Download-Upgradeable-Packages "1";
+      APT::Periodic::AutocleanInterval "7";
+      APT::Periodic::Unattended-Upgrade "1";
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: '0644'
+  when: ansible_os_family == "Debian" and automatic_updates_enabled | default(true)
+
+- name: Configure automatic updates (RHEL/CentOS)
+  yum:
+    name: yum-cron
+    state: present
+  when: ansible_os_family == "RedHat" and automatic_updates_enabled | default(true)
+
+- name: Configure yum-cron (RHEL/CentOS)
+  template:
+    src: yum-cron.conf.j2
+    dest: /etc/yum/yum-cron.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: ansible_os_family == "RedHat" and automatic_updates_enabled | default(true)
+
+- name: Enable and start yum-cron (RHEL/CentOS)
+  systemd:
+    name: yum-cron
+    state: started
+    enabled: true
+    daemon_reload: true
+  when: ansible_os_family == "RedHat" and automatic_updates_enabled | default(true)
+
+- name: Configure automatic reboot if needed
+  cron:
+    name: "Auto-reboot if required"
+    minute: "{{ automatic_updates_reboot_time.split(':')[1] | default('0') }}"
+    hour: "{{ automatic_updates_reboot_time.split(':')[0] | default('3') }}"
+    job: "test -f /var/run/reboot-required && shutdown -r +5"
+  when: 
+    - ansible_os_family == "Debian"
+    - automatic_updates_enabled | default(true)
+    - automatic_updates_reboot | default(false)

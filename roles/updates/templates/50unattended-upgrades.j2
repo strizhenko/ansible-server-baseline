@@ -1,0 +1,20 @@
+// Ansible managed - do not modify manually
+Unattended-Upgrade::Allowed-Origins {
+        "{{ ansible_distribution }}:{{ ansible_distribution_release }}";
+        "{{ ansible_distribution }}:{{ ansible_distribution_release }}-security";
+        "{{ ansible_distribution }}:{{ ansible_distribution_release }}-updates";
+};
+
+Unattended-Upgrade::Package-Blacklist {
+};
+
+Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+Unattended-Upgrade::MinimalSteps "true";
+Unattended-Upgrade::InstallOnShutdown "false";
+Unattended-Upgrade::Remove-Unused-Dependencies "{{ 'true' if unattended_upgrades_remove_unused_deps | default(true) else 'false' }}";
+Unattended-Upgrade::Automatic-Reboot "{{ 'true' if automatic_updates_reboot | default(false) else 'false' }}";
+Unattended-Upgrade::Automatic-Reboot-Time "{{ automatic_updates_reboot_time | default('03:00') }}";
+Unattended-Upgrade::Mail "{{ unattended_upgrades_email | default('root') }}";
+Unattended-Upgrade::MailOnlyOnError "true";
+Unattended-Upgrade::SyslogEnable "true";
+Unattended-Upgrade::SyslogFacility "daemon";

@@ -1,0 +1,135 @@
+---
+- name: Validate server configuration
+  hosts: all
+  become: true
+  gather_facts: true
+  
+  tasks:
+    - name: Check SSH configuration
+      command: sshd -t
+      changed_when: false
+      register: sshd_test
+      ignore_errors: true
+    
+    - name: Report SSH configuration status
+      debug:
+        msg: "SSH configuration: {{ 'VALID' if sshd_test.rc == 0 else 'INVALID' }}"
+        var: sshd_test.stderr if sshd_test.rc != 0
+    
+    - name: Check firewall status
+      command: ufw status
+      register: firewall_status
+      changed_when: false
+      when: ansible_os_family == "Debian"
+    
+    - name: Report firewall status
+      debug:
+        msg: "Firewall status: {{ firewall_status.stdout_lines[0] if firewall_status.stdout_lines else 'Not checked' }}"
+      when: ansible_os_family == "Debian"
+    
+    - name: Check Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+      register: docker_service
+      when: docker_enabled | default(false)
+    
+    - name: Report Docker status
+      debug:
+        msg: "Docker: {{ 'RUNNING' if docker_service is success else 'STOPPED' }}"
+      when: docker_enabled | default(false)
+    
+    - name: Check Node Exporter service
+      systemd:
+        name: node_exporter
+        state: started
+        enabled: true
+      register: node_exporter_service
+      when: monitoring_enabled | default(false)
+    
+    - name: Report Node Exporter status
+      debug:
+        msg: "Node Exporter: {{ 'RUNNING' if node_exporter_service is success else 'STOPPED' }}"
+      when: monitoring_enabled | default(false)
+    
+    - name: Test Node Exporter metrics endpoint
+      uri:
+        url: "http://localhost:{{ node_exporter_port | default(9100) }}/metrics"
+        status_code: 200
+        timeout: 5
+      register: node_exporter_metrics
+      when: monitoring_enabled | default(false)
+    
+    - name: Report metrics endpoint status
+      debug:
+        msg: "Node Exporter metrics: {{ 'AVAILABLE' if node_exporter_metrics.status == 200 else 'UNAVAILABLE' }}"
+      when: monitoring_enabled | default(false)
+    
+    - name: Check disk usage
+      shell: df -h / | tail -1
+      register: disk_usage
+      changed_when: false
+    
+    - name: Report disk usage
+      debug:
+        msg: "Disk usage: {{ disk_usage.stdout }}"
+    
+    - name: Check memory usage
+      shell: 'free -h | grep "Mem:"'
+      register: memory_usage
+      changed_when: false
+    
+    - name: Report memory usage
+      debug:
+        msg: "Memory usage: {{ memory_usage.stdout }}"
+    
+    - name: Check system load
+      shell: uptime
+      register: system_load
+      changed_when: false
+    
+    - name: Report system load
+      debug:
+        msg: "System load: {{ system_load.stdout }}"
+    
+    - name: Generate validation report
+      template:
+        src: |
+          Server Validation Report
+          ========================
+          Host: {{ inventory_hostname }}
+          IP: {{ ansible_default_ipv4.address | default('N/A') }}
+          Date: {{ ansible_date_time.iso8601 }}
+          
+          Services Status:
+          - SSH: {{ '✓' if sshd_test.rc == 0 else '✗' }}
+          - Firewall: {{ '✓' if firewall_status is defined and 'active' in firewall_status.stdout else '✗' }}
+          - Docker: {{ '✓' if docker_service is defined and docker_service is success else '✗' }}
+          - Node Exporter: {{ '✓' if node_exporter_service is defined and node_exporter_service is success else '✗' }}
+          
+          System Resources:
+          - Disk: {{ disk_usage.stdout.split()[4] }} used
+          - Memory: {{ memory_usage.stdout.split()[2] }} used of {{ memory_usage.stdout.split()[1] }}
+          - Load: {{ system_load.stdout.split()[-3:] | join(', ') }}
+          
+          Recommendations:
+          {% if disk_usage.stdout.split()[4] | replace('%', '') | int > 80 %}
+          - Warning: Disk usage above 80%
+          {% endif %}
+          {% if sshd_test.rc != 0 %}
+          - Critical: SSH configuration invalid
+          {% endif %}
+        dest: /tmp/validation-report-{{ inventory_hostname }}-{{ ansible_date_time.date }}.txt
+      delegate_to: localhost
+      run_once: true
+    
+    - name: Display validation summary
+      debug:
+        msg: |
+          Validation completed for {{ inventory_hostname }}
+          Report saved to: /tmp/validation-report-{{ inventory_hostname }}-{{ ansible_date_time.date }}.txt
+          Issues found: {{ 
+            (sshd_test.rc != 0)|int + 
+            (disk_usage.stdout.split()[4]|replace('%', '')|int > 80)|int 
+          }}
