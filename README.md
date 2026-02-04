@@ -32,24 +32,52 @@ A production-ready Ansible collection for automated server provisioning, securit
 📁 Project Structure
 
 ansible-server-baseline/
-|-- inventories/
-| |-- production.yml
-| |-- staging.yml
-| -- development.yml |-- roles/ | |-- hardening/ | | |-- tasks/main.yml | | |-- templates/ | | | |-- sshd_config.j2 | | |-- audit.rules.j2
-| | -- defaults/main.yml | |-- monitoring/ | | |-- tasks/main.yml | | |-- templates/ | | |-- node_exporter.service.j2
-| | -- vars/main.yml | |-- docker/ | | |-- tasks/main.yml | |-- defaults/main.yml
-| |-- updates/
-| | -- tasks/main.yml |-- common/
-| |-- tasks/main.yml
-| -- defaults/main.yml |-- site.yml |-- playbooks/ | |-- deploy.yml |-- validate.yml
-|-- group_vars/
-| |-- all.yml
-| -- webservers.yml |-- host_vars/ |-- example-server.yml
-|-- .github/workflows/
-| -- ansible-test.yml |-- tests/ | |-- test.yml |-- requirements.yml
-|-- docs/
-| |-- architecture.md
-| -- best-practices.md |-- .gitignore |-- ansible.cfg |-- requirements.yml-- README.md
+├── inventories/              # Environment definitions
+│   ├── production.yml        # Production servers
+│   ├── staging.yml           # Staging environment
+│   └── development.yml       # Development servers
+├── roles/                    # Ansible roles
+│   ├── hardening/            # Security hardening
+│   │   ├── tasks/main.yml		# Main tasks
+│   │   ├── templates/        # Configuration templates
+│   │   │   ├── sshd_config.j2
+│   │   │   └── audit.rules.j2
+│   │   └── defaults/main.yml # Role defaults
+│   ├── monitoring/           # Monitoring setup
+│   │   ├── tasks/main.yml
+│   │   ├── templates/
+│   │   │   └── node_exporter.service.j2
+│   │   └── vars/
+│   │       └── main.yml
+│   ├── docker/               # Docker installation
+│   │   ├── tasks/main.yml
+│   │   └── defaults/main.yml
+│   ├── updates/              # System updates
+│   │   └── tasks/main.yml
+│   └── common/               # Common configurations
+│       ├── tasks/main.yml
+│       └── defaults/main.yml
+├── site.yml                  # Main playbook
+├── playbooks/                # Additional playbooks
+│   ├── deploy.yml
+│   └── validate.yml
+├── group_vars/               # Group variables
+│   ├── all.yml
+│   └── webservers.yml
+├── host_vars/                # Host-specific variables
+│   └── example-server.yml
+├── .github/workflows/        # CI/CD pipelines
+│   └── ansible-test.yml
+├── tests/                    # Test suite
+│   ├── test.yml
+│   └── requirements.yml
+├── docs/                     # Documentation
+│   ├── architecture.md
+│   └── best-practices.md
+├── .gitignore                # Git ignore rules
+├── ansible.cfg               # Ansible configuration
+├── requirements.yml          # Role dependencies
+└── README.md                 # This file
 
 
 🚀 Quick Start
