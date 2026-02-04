@@ -5,8 +5,8 @@ A production-ready Ansible collection for automated server provisioning, securit
 📊 Architecture Overview
 <img width="8818" height="2633" alt="Architecture-1" src="https://github.com/user-attachments/assets/629bec06-11cd-41f9-90e8-6b4b42e41422" />
 
-    
 🎯 Features
+```bash
 🔒 Security Hardening
     • SSH Security: Disable root login, enforce key-based authentication, configure strong ciphers
     • Firewall Configuration: Automatic UFW/Firewalld setup with customizable rules
@@ -30,7 +30,6 @@ A production-ready Ansible collection for automated server provisioning, securit
     • Performance Tuning: Sysctl optimization for production
     
 📁 Project Structure
-
 ansible-server-baseline/
 ├── inventories/              # Environment definitions
 │   ├── production.yml        # Production servers
