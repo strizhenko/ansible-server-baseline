@@ -1,36 +1,11 @@
 ﻿Ansible Server Baseline
 Automated server hardening and baseline configuration using Ansible.
 A production-ready Ansible collection for automated server provisioning, security hardening, monitoring setup, and Docker installation.
+
 📊 Architecture Overview
-graph TB
-    A[Ansible Control Node] --> B[SSH Connection]
-    B --> C[Target Servers]
+<img width="8818" height="2633" alt="Architecture-1" src="https://github.com/user-attachments/assets/629bec06-11cd-41f9-90e8-6b4b42e41422" />
+
     
-    C --> D[Base System]
-    D --> E[Security Hardening]
-    D --> F[Monitoring Stack]
-    D --> G[Docker Runtime]
-    D --> H[Auto Updates]
-    
-    E --> E1[SSH Security]
-    E --> E2[Firewall Rules]
-    E --> E3[User Management]
-    E --> E4[Audit Logging]
-    
-    F --> F1[Node Exporter]
-    F --> F2[Prometheus Metrics]
-    F --> F3[Systemd Metrics]
-    
-    G --> G1[Docker Engine]
-    G --> G2[Docker Compose]
-    G --> G3[User Permissions]
-    
-    H --> H1[Security Updates]
-    H --> H2[Kernel Updates]
-    H --> H3[Auto Reboot]
-    
-    F1 --> I[Prometheus Server]
-    I --> J[Grafana Dashboards]
 🎯 Features
 🔒 Security Hardening
     • SSH Security: Disable root login, enforce key-based authentication, configure strong ciphers
