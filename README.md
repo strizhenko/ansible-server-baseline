@@ -31,52 +31,53 @@ A production-ready Ansible collection for automated server provisioning, securit
 📁 Project Structure
 text
 ansible-server-baseline/
-├── inventories/			# Environment definitions
-│   ├── production.yml		# Production servers
-│   ├── staging.yml			# Staging environment
-│   └── development.yml		# Development servers
-├── roles/				# Ansible roles
-│   ├── hardening/			# Security hardening
-│   │   ├── tasks/main.yml		# Main tasks
-│   │   ├── templates/		# Configuration templates
+├── inventories/
+│   ├── production.yml
+│   ├── staging.yml
+│   └── development.yml
+├── roles/
+│   ├── hardening/
+│   │   ├── tasks/main.yml
+│   │   ├── templates/
 │   │   │   ├── sshd_config.j2
 │   │   │   └── audit.rules.j2
-│   │   └── defaults/main.yml	# Role defaults
-│   ├── monitoring/			# Monitoring setup
+│   │   └── defaults/main.yml
+│   ├── monitoring/
 │   │   ├── tasks/main.yml
 │   │   ├── templates/
 │   │   │   └── node_exporter.service.j2
 │   │   └── vars/
 │   │       └── main.yml
-│   ├── docker/			# Docker installation
+│   ├── docker/
 │   │   ├── tasks/main.yml
 │   │   └── defaults/main.yml
-│   ├── updates/			# System updates
+│   ├── updates/
 │   │   └── tasks/main.yml
-│   └── common/			# Common configurations
+│   └── common/
 │       ├── tasks/main.yml
 │       └── defaults/main.yml
-├── site.yml				# Main playbook
-├── playbooks/			# Additional playbooks
+├── site.yml
+├── playbooks/
 │   ├── deploy.yml
 │   └── validate.yml
-├── group_vars/			# Group variables
+├── group_vars/
 │   ├── all.yml
 │   └── webservers.yml
-├── host_vars/			# Host-specific variables
+├── host_vars/
 │   └── example-server.yml
-├── .github/workflows/		# CI/CD pipelines
+├── .github/workflows/
 │   └── ansible-test.yml
-├── tests/				# Test suite
+├── tests/
 │   ├── test.yml
 │   └── requirements.yml
-├── docs/				# Documentation
+├── docs/
 │   ├── architecture.md
 │   └── best-practices.md
-├── .gitignore				# Git ignore rules
-├── ansible.cfg			# Ansible configuration
-├── requirements.yml			# Role dependencies
-└── README.md			# This file
+├── .gitignore
+├── ansible.cfg
+├── requirements.yml
+└── README.md
+
 🚀 Quick Start
 Prerequisites
     • Ansible 2.9+ installed on control node
@@ -120,8 +121,10 @@ Installation
        
        # With tags (run specific roles)
        ansible-playbook -i inventories/production.yml site.yml --tags="hardening,monitoring"
+       
 Example: Single Server Deployment
 For quick testing on a local VM or cloud instance:
+
 # Create minimal inventory
 cat > inventory.ini << EOF
 [servers]
@@ -241,29 +244,35 @@ package_manager: yum
 systemd: true
 service_manager: systemctl
 firewall_service: firewalld
+
 🎮 Usage Examples
 1. Complete Server Provisioning
 # Provision all roles on all servers
 ansible-playbook -i inventories/production.yml site.yml
+
 2. Security Hardening Only
 # Apply only security hardening
 ansible-playbook -i inventories/production.yml site.yml --tags="hardening"
+
 3. Docker Setup on Specific Group
 # Install Docker on webservers group
 ansible-playbook -i inventories/production.yml site.yml \
   --limit webservers \
   --tags="docker"
+  
 4. Monitoring Setup with Custom Port
 # Set up monitoring with custom Node Exporter port
 ansible-playbook -i inventories/production.yml site.yml \
   --tags="monitoring" \
   --extra-vars="node_exporter_port=19100"
+  
 5. Dry Run with Verbose Output
 # Test changes without applying
 ansible-playbook -i inventories/production.yml site.yml \
   --check \
   --diff \
   -vvv
+  
 🔧 Advanced Usage
 Using Vault for Secrets
 # Create encrypted variables file
@@ -295,6 +304,7 @@ molecule test
 
 # Create scenario
 molecule init scenario -r hardening -d docker
+
 📊 Verification
 Check Applied Configuration
 # Verify SSH configuration
@@ -321,6 +331,7 @@ Generate Report
         src: report.j2
         dest: "/tmp/system-report-{{ inventory_hostname }}.md"
       delegate_to: localhost
+      
 🧪 Testing
 Local Testing with Vagrant
 # Vagrantfile
@@ -336,6 +347,7 @@ Vagrant.configure("2") do |config|
     }
   end
 end
+
 CI/CD Pipeline
 # .github/workflows/ansible-test.yml
 name: Ansible Tests
@@ -369,11 +381,12 @@ jobs:
       run: |
         cd roles/hardening
         molecule test
+        
 📈 Monitoring Dashboard
 After deploying the monitoring role, access Prometheus metrics:
     1. Node Exporter Metrics: http://your-server:9100/metrics
     2. Prometheus Configuration:
-yaml
+
 # prometheus.yml
 scrape_configs:
   - job_name: 'node'
@@ -454,6 +467,7 @@ Pull Request Process
     • Best Practices
     • Troubleshooting
     • FAQs
+    
 🐛 Troubleshooting
 Common Issues
 SSH Connection Problems:
@@ -483,6 +497,7 @@ ansible-playbook -i inventory.ini site.yml --step
 ansible-playbook -i inventory.ini site.yml --start-at-task="Install Docker"
 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
 👤 Author
 Oleksandr Stryzhenko - Infrastructure/Cloud Engineer
     • GitHub: @strizhenko
