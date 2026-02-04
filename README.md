@@ -28,55 +28,29 @@ A production-ready Ansible collection for automated server provisioning, securit
     • Locale Settings: Timezone and language configuration
     • Package Management: Apt/Yum/DNF repository configuration
     • Performance Tuning: Sysctl optimization for production
+    
 📁 Project Structure
-text
+
 ansible-server-baseline/
-├── inventories/
-│   ├── production.yml
-│   ├── staging.yml
-│   └── development.yml
-├── roles/
-│   ├── hardening/
-│   │   ├── tasks/main.yml
-│   │   ├── templates/
-│   │   │   ├── sshd_config.j2
-│   │   │   └── audit.rules.j2
-│   │   └── defaults/main.yml
-│   ├── monitoring/
-│   │   ├── tasks/main.yml
-│   │   ├── templates/
-│   │   │   └── node_exporter.service.j2
-│   │   └── vars/
-│   │       └── main.yml
-│   ├── docker/
-│   │   ├── tasks/main.yml
-│   │   └── defaults/main.yml
-│   ├── updates/
-│   │   └── tasks/main.yml
-│   └── common/
-│       ├── tasks/main.yml
-│       └── defaults/main.yml
-├── site.yml
-├── playbooks/
-│   ├── deploy.yml
-│   └── validate.yml
-├── group_vars/
-│   ├── all.yml
-│   └── webservers.yml
-├── host_vars/
-│   └── example-server.yml
-├── .github/workflows/
-│   └── ansible-test.yml
-├── tests/
-│   ├── test.yml
-│   └── requirements.yml
-├── docs/
-│   ├── architecture.md
-│   └── best-practices.md
-├── .gitignore
-├── ansible.cfg
-├── requirements.yml
-└── README.md
+|-- inventories/
+| |-- production.yml
+| |-- staging.yml
+| -- development.yml |-- roles/ | |-- hardening/ | | |-- tasks/main.yml | | |-- templates/ | | | |-- sshd_config.j2 | | |-- audit.rules.j2
+| | -- defaults/main.yml | |-- monitoring/ | | |-- tasks/main.yml | | |-- templates/ | | |-- node_exporter.service.j2
+| | -- vars/main.yml | |-- docker/ | | |-- tasks/main.yml | |-- defaults/main.yml
+| |-- updates/
+| | -- tasks/main.yml |-- common/
+| |-- tasks/main.yml
+| -- defaults/main.yml |-- site.yml |-- playbooks/ | |-- deploy.yml |-- validate.yml
+|-- group_vars/
+| |-- all.yml
+| -- webservers.yml |-- host_vars/ |-- example-server.yml
+|-- .github/workflows/
+| -- ansible-test.yml |-- tests/ | |-- test.yml |-- requirements.yml
+|-- docs/
+| |-- architecture.md
+| -- best-practices.md |-- .gitignore |-- ansible.cfg |-- requirements.yml-- README.md
+
 
 🚀 Quick Start
 Prerequisites
@@ -85,15 +59,14 @@ Prerequisites
     • SSH access with sudo privileges to target servers
     • Inventory file with target servers defined
 Installation
+
     1. Clone the repository:
        git clone https://github.com/strizhenko/ansible-server-baseline.git
        cd ansible-server-baseline
-       
     2. Install role dependencies:
        ansible-galaxy install -r requirements.yml
     3. Create inventory file:
        cp inventories/production.example.yml inventories/production.yml
-       
     4. Edit inventory file:
        # inventories/production.yml
        all:
